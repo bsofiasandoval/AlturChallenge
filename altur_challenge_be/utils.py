@@ -63,6 +63,25 @@ def generate_ai_insights(transcription_text):
     return analyze_call(transcription_text)
 
 # db / supabase methods
+def create_call_record(filename, duration_seconds, transcription_text, language_code='eng', translated_transcription=None):
+    """
+    Insert initial call record into Supabase calls table.
+    Returns UUID of the call record created
+    """
+    data = {
+        'filename': filename,
+        'duration': duration_seconds, 
+        'transcription': transcription_text, 
+        'insights': None # will be updated later
+    }
+
+    result = supabase.table('calls').insert(data).execute()
+
+    if result.data:
+        return result.data[0]['id']
+    else:
+        raise Exception("Failed to create call record in Supabase")
+
 def update_call_insights(call_id, insights):
     """
     Update insights column for a call record
