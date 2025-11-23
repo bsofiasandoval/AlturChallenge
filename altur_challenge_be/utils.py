@@ -156,9 +156,21 @@ def get_call_by_id(call_id):
         return result.data[0]
     return None
 
-def get_all_calls():
+def get_all_calls(tag_filter=None, sort_order='desc'):
     """
-    Get all calls from the database, ordered by uploaded_at descending (newest first)
+    Get all calls from the database
+    Args:
+        tag_filter: Optional tag to filter by (searches within insights->tags JSON array)
+        sort_order: 'desc' for newest first (default), 'asc' for oldest first
     """
-    result = supabase.table('calls').select('*').order('uploaded_at', desc=True).execute()
+    query = supabase.table('calls').select('*')
+
+    # Filter by tag if provided (tag is inside insights JSON column)
+    if tag_filter:
+        # PostgreSQL JSONB query: check if tag exists in insights->tags array
+        query = query.contains('insights->tags', [tag_filter])
+
+    # Apply sorting
+    descending = sort_order.lower() == 'desc'
+    result = query.order('uploaded_at', desc=descending).execute()
     return result.data if result.data else []

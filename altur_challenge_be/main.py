@@ -29,9 +29,27 @@ def status():
 def get_calls():
     """
     Get all calls from the database
+    Query params:
+    - tag: Filter by tag (e.g., ?tag=needs_follow_up)
+    - sort: Sort order - 'asc' for oldest first, 'desc' for newest first (default: desc)
+
+    Examples:
+    - GET /calls - Get all calls, newest first
+    - GET /calls?tag=needs_follow_up - Get calls with 'needs_follow_up' tag
+    - GET /calls?sort=asc - Get all calls, oldest first
+    - GET /calls?tag=complaint&sort=desc - Get complaint calls, newest first
     """
     try:
-        calls = get_all_calls()
+        # Get query parameters
+        tag_filter = request.args.get('tag')
+        sort_order = request.args.get('sort', 'desc')  # Default to newest first
+
+        # Validate sort order
+        if sort_order not in ['asc', 'desc']:
+            return jsonify({'error': 'Invalid sort parameter. Use "asc" or "desc"'}), 400
+
+        # Fetch calls with optional filters and sorting
+        calls = get_all_calls(tag_filter=tag_filter, sort_order=sort_order)
 
         # Format response to match frontend expectations
         formatted_calls = []
@@ -49,7 +67,12 @@ def get_calls():
 
         return jsonify({
             'success': True,
-            'calls': formatted_calls
+            'calls': formatted_calls,
+            'count': len(formatted_calls),
+            'filter': {
+                'tag': tag_filter,
+                'sort': sort_order
+            }
         }), 200
     except Exception as e:
         return jsonify({'error': 'Failed to fetch calls', 'details': str(e)}), 500
