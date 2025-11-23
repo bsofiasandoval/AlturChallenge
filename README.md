@@ -3,7 +3,7 @@
 
 - Python 3.9.6 or higher
 - Node.js 16+ and npm
-- Git
+- Git for cloning repository
 
 ## Setup Instructions
 
