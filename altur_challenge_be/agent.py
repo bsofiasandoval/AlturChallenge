@@ -27,8 +27,9 @@ class Insights(BaseModel):
 # Analysis agent setup
 call_analysis_agent = Agent(
     model=OpenAIChat(id="gpt-4o"),
-    description="You are an AI call analyst that analyzes phone call transcriptions.",
+    description="You are an AI call analyst that analyzes phone call transcriptions. Responds in english regardless of original call language.",
     instructions=[
+        "Must always respond in English regardless of original call language.",
         "IMPORTANT: Use ONLY these exact tags: needs_follow_up, wrong_number, not_interested, requesting_info, complaint, support_issue, scheduling, pricing_inquiry, ready_to_purchase, callback_requested, decision_maker_absent, positive_feedback, escalation_needed, voicemail",
         "Sentiment percentages MUST sum to 100",
         "Satisfaction score MUST be between 1-5 (integer only)",
