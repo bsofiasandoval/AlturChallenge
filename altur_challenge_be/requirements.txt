@@ -25,6 +25,7 @@ httpx==0.28.1
 hyperframe==6.1.0
 idna==3.11
 importlib_metadata==8.7.0
+iniconfig==2.1.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
 jiter==0.12.0
@@ -35,6 +36,7 @@ multidict==6.7.0
 mutagen==1.47.0
 openai==2.8.1
 packaging==25.0
+pluggy==1.6.0
 postgrest==2.24.0
 propcache==0.4.1
 pycparser==2.23
@@ -43,6 +45,7 @@ pydantic-settings==2.11.0
 pydantic_core==2.41.5
 Pygments==2.19.2
 PyJWT==2.10.1
+pytest==8.4.2
 python-dotenv==1.2.1
 python-multipart==0.0.20
 PyYAML==6.0.3
@@ -57,6 +60,7 @@ StrEnum==0.4.15
 supabase==2.24.0
 supabase-auth==2.24.0
 supabase-functions==2.24.0
+tomli==2.3.0
 tqdm==4.67.1
 typer==0.20.0
 typing-inspection==0.4.2
