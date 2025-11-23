@@ -143,13 +143,80 @@ AlturChallenge/
         └── test.yml             # CI/CD automated tests
 ```
 
-## Future Improvements
+## Key Assumptions
 
-Given more development time I would've liked to implement the following:
+**Speaker Configuration:**
+- Designed primarily for 2-speaker conversations (the most common call scenario)
+- UI and visualization optimized for this use case with distinct color coding (blue/purple)
+- Graceful fallback handling for additional speakers (gray color scheme)
 
-1. **Batch Upload:** Support multiple file uploads simultaneously
-2. **Export Functionality:** Download call reports as PDF, CSV or JSON
-3. **User Authentication:** Add user accounts and role-based access 
-4. **Analytics Dashboard:** Aggregate statistics and trends across calls
-5. **Error Handling:** More detailed error messages and handling logic
+**Call Data:**
+- Assumed audio files would be in MP3 or WAV format
+- No strict limits on call duration, though longer calls increase API processing time
+- Generic tag system designed to work across various call types
+
+## Architectural & Design Decisions
+
+**Stack Choices:**
+1. **ElevenLabs for Transcription**
+   - Selected for API ease of use and straightforward integration & clear documentation
+   - Really good speaker diarization quality out of the box
+   
+2. **Next.js for Frontend**
+   - Chose based on familiarity with the framework and ecosystem
+   - Modern React patterns with App Router for better developer experience
+   - TypeScript integration for type safety across the application
+
+3. **Flask for Backend**
+   - Lightweight Python framework perfect for API endpoints
+   - Quick to set up and deploy
+   - Easy integration with Python-based AI libraries (OpenAI, ElevenLabs)
+
+4. **Unified Insights Column Design for Each Call**
+   - Combined All AI-generated insights into a single JSON column instead of separate database fields
+   - The `insights` column contains: summary, satisfaction_score, sentiment, tags, caller_intent, key_points, and recommended_action
+   - **Benefits**: Simplifies database schema, makes insights easily extensible and modifiable
+   - AI analysis logic centralized in `agent.py` - easy to add/modify insights that are generated
+   - Used JSON type column
+   - **Trade-off**: Requires client-side filtering instead of database-level queries
+
+**Insight Selection Strategy:**
+
+The specific insights extracted (satisfaction score, caller intent, recommended actions, etc.) were chosen based on:
+- Real-world call analysis needs from previous project and conversations with stakeholders
+- Focused on **actionable information**, users can quickly understand what happened without reading full transcripts
+- Alignment with the challenge requirements
+
+**Why I chose these Insights:**
+- **Caller Intent**: Instantly know why someone called
+- **Recommended Actions**: Get immediate next steps without manual analysis 
+- **Satisfaction Score**: Quick metric for call quality
+- **Tags**: Enable filtering and categorization across many calls (challenge req)
+- **Sentiment**: Understand emotional tone of the conversation (to be improved)
+
+## What Would Be Improved With More Time
+**Priority 1: Optimize Analysis Processing Time**
+- Currently the `/upload` endpoint blocks while transcribing and analyzing
+- **Improvement**: Implement background job processing 
+- Multi-step process: immediate upload confirmation → background processing → real-time status updates
+- Users wouldn't have to wait on the upload screen
+
+**Priority 2: Automatic Speaker Identification**
+- Currently displays generic "Speaker 0" and "Speaker 1" labels after diarization
+- **Improvement**: Use AI to automatically identify which speaker is which (customer vs. agent/support)
+- Analyze conversation patterns, language, and context to determine roles
+- Display meaningful labels like "Customer" and "Agent" instead of numbered speakers
+
+**Priority 3: Production Readiness**
+- More robust error handling with detailed error messages
+- Retry logic for API failures (OpenAI, ElevenLabs)
+- **File size limiting**: Enforce max file size (configured in `config.py` but not currently implemented) to prevent API abuse and control costs
+- Rate limiting
+
+**Additional Feature Ideas**
+- Batch upload support for multiple files
+- Export functionality (PDF reports, CSV data export)
+- Analytics dashboard with aggregate statistics
+- Search functionality across transcriptions
+- User authentication and team collaboration features
 
