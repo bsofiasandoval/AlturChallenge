@@ -23,7 +23,7 @@ def allowed_files(filename):
     ext = os.path.splitext(filename)[1].lower()
     return ext in ALLOWED_EXTENSIONS
 
-def transcribe_elevenlabs(file_bytes, model_id='scribe_v1'):
+def transcribe_elevenlabs(file_bytes,model_id='scribe_v1'):
     try:
         audio_file = io.BytesIO(file_bytes)
         transcription_result = elevenlabs_client.speech_to_text.convert(
@@ -31,7 +31,65 @@ def transcribe_elevenlabs(file_bytes, model_id='scribe_v1'):
             model_id=model_id,
             diarize=True, # Enables speaker recognition
         )
-        return transcription_result
+
+        print("Raw ElevenLabs Response:", transcription_result) # Remove Later
+
+        # TODO: FIX SPEAKERS LOGIC
+        parsed_result = {
+            'text': transcription_result.text if hasattr(transcription_result, 'text') else '',
+            'formatted_transcript': [],
+            'speakers': []
+        }
+
+        # Group words by speaker turns to create a conversation structure
+        if hasattr(transcription_result, 'words') and transcription_result.words:
+            current_speaker = None
+            current_text = []
+            current_start = None
+
+            for word_obj in transcription_result.words:
+                # Skip spacing/punctuation-only entries
+                if word_obj.type == 'spacing':
+                    continue
+
+                speaker_id = word_obj.speaker_id if hasattr(word_obj, 'speaker_id') else 'unknown'
+                word_text = word_obj.text if hasattr(word_obj, 'text') else ''
+                word_start = word_obj.start if hasattr(word_obj, 'start') else 0
+
+                # Track unique speakers
+                if speaker_id not in parsed_result['speakers']:
+                    parsed_result['speakers'].append(speaker_id)
+
+                # Detect speaker change
+                if current_speaker != speaker_id:
+                    # Save previous speaker's turn
+                    if current_speaker is not None and current_text:
+                        parsed_result['formatted_transcript'].append({
+                            'speaker': current_speaker,
+                            'text': ''.join(current_text).strip(),
+                            'start_time': current_start
+                        })
+
+                    # Start new speaker turn
+                    current_speaker = speaker_id
+                    current_text = [word_text]
+                    current_start = word_start
+                else:
+                    # Continue current speaker's turn
+                    # Add space before word unless it's punctuation
+                    if word_text not in ['.', ',', '!', '?', ':', ';', ')', ']', '}']:
+                        current_text.append(' ')
+                    current_text.append(word_text)
+
+            # Don't forget the last speaker turn
+            if current_speaker is not None and current_text:
+                parsed_result['formatted_transcript'].append({
+                    'speaker': current_speaker,
+                    'text': ''.join(current_text).strip(),
+                    'start_time': current_start
+                })
+
+        return parsed_result
 
     except Exception as e:
         print(f"ElevenLabs transcription error: {str(e)}")
@@ -62,18 +120,24 @@ def get_audio_duration(file_bytes, filename):
 def generate_ai_insights(transcription_text):
     return analyze_call(transcription_text)
 
-# db / supabase methods
-def create_call_record(filename, duration_seconds, transcription_text, language_code='eng', translated_transcription=None):
+# Db / supabase methods
+def create_call_record(filename, duration_seconds, transcription_text, formatted_transcript=None, speakers=None):
     """
     Insert initial call record into Supabase calls table.
     Returns UUID of the call record created
     """
     data = {
         'filename': filename,
-        'duration': duration_seconds, 
-        'transcription': transcription_text, 
+        'duration': duration_seconds,
+        'transcription': transcription_text,
         'insights': None # will be updated later
     }
+
+    if formatted_transcript:
+        data['formatted_transcript'] = formatted_transcript
+
+    if speakers:
+        data['speakers'] = speakers
 
     result = supabase.table('calls').insert(data).execute()
 
@@ -88,14 +152,14 @@ def update_call_insights(call_id, insights):
     """
     result = supabase.table('calls').update({
         'insights':insights
-    }).eq('id',call_id).exectute()
+    }).eq('id',call_id).execute()
 
     if not result.data:
         raise Exception(f"Failed to update insights field for call {call_id}")
     return result.data[0]
 
 def get_call_by_id(call_id):
-    result = supabase.table('calls').select(1).eq('id',call_id).execute()
+    result = supabase.table('calls').select('*').eq('id',call_id).execute()
     if result.data and len(result.data) > 0:
         return result.data[0]
     return None
