@@ -34,34 +34,29 @@ def transcribe_elevenlabs(file_bytes,model_id='scribe_v1'):
 
         print("Raw ElevenLabs Response:", transcription_result) # Remove Later
 
-        # TODO: FIX SPEAKERS LOGIC
         parsed_result = {
             'text': transcription_result.text if hasattr(transcription_result, 'text') else '',
             'formatted_transcript': [],
             'speakers': []
         }
 
-        # Group words by speaker turns to create a conversation structure
+        # Group words by speaker turns using ElevenLabs' speaker_id
         if hasattr(transcription_result, 'words') and transcription_result.words:
             current_speaker = None
             current_text = []
             current_start = None
 
             for word_obj in transcription_result.words:
-                # Skip spacing/punctuation-only entries
-                if word_obj.type == 'spacing':
-                    continue
-
                 speaker_id = word_obj.speaker_id if hasattr(word_obj, 'speaker_id') else 'unknown'
                 word_text = word_obj.text if hasattr(word_obj, 'text') else ''
                 word_start = word_obj.start if hasattr(word_obj, 'start') else 0
 
-                # Track unique speakers
-                if speaker_id not in parsed_result['speakers']:
+                # Track unique speakers (only for actual words, not spacing)
+                if word_obj.type == 'word' and speaker_id not in parsed_result['speakers']:
                     parsed_result['speakers'].append(speaker_id)
 
-                # Detect speaker change
-                if current_speaker != speaker_id:
+                # Detect speaker change (only on actual words, not spacing)
+                if word_obj.type == 'word' and current_speaker != speaker_id:
                     # Save previous speaker's turn
                     if current_speaker is not None and current_text:
                         parsed_result['formatted_transcript'].append({
@@ -75,10 +70,7 @@ def transcribe_elevenlabs(file_bytes,model_id='scribe_v1'):
                     current_text = [word_text]
                     current_start = word_start
                 else:
-                    # Continue current speaker's turn
-                    # Add space before word unless it's punctuation
-                    if word_text not in ['.', ',', '!', '?', ':', ';', ')', ']', '}']:
-                        current_text.append(' ')
+                    # Continue current speaker's turn - include both words and spacing
                     current_text.append(word_text)
 
             # Don't forget the last speaker turn
@@ -124,7 +116,7 @@ def generate_ai_insights(transcription_text):
 def create_call_record(filename, duration_seconds, transcription_text, formatted_transcript=None, speakers=None):
     """
     Insert initial call record into Supabase calls table.
-    Returns UUID of the call record created
+    Returns the created call record (including id and created_at)
     """
     data = {
         'filename': filename,
@@ -142,7 +134,7 @@ def create_call_record(filename, duration_seconds, transcription_text, formatted
     result = supabase.table('calls').insert(data).execute()
 
     if result.data:
-        return result.data[0]['id']
+        return result.data[0]
     else:
         raise Exception("Failed to create call record in Supabase")
 

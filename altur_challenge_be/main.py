@@ -43,7 +43,8 @@ def get_call(call_id):
             'transcription': call_data['transcription'],
             'formatted_transcript': call_data.get('formatted_transcript'),
             'speakers': call_data.get('speakers'),
-            'insights': call_data['insights']
+            'insights': call_data['insights'],
+            'uploaded_at': call_data.get('uploaded_at')
         }), 200
     except Exception as e:
         return jsonify({'error': 'Failed to fetch call','details': str(e)}), 500
@@ -81,7 +82,7 @@ def upload():
 
         # Create call record in DB
         duration_seconds = get_audio_duration(file_bytes, file.filename)
-        call_id = create_call_record(
+        call_record = create_call_record(
             filename=file.filename,
             duration_seconds=duration_seconds,
             transcription_text=transcription_text,
@@ -92,20 +93,21 @@ def upload():
         # Generate AI Insights and update record
         try:
             insights = generate_ai_insights(transcription_text)
-            update_call_insights(call_id, insights)
+            update_call_insights(call_record['id'], insights)
         except Exception as ai_error:
             print(f"AI insight generation failed: {ai_error}")
             insights = None
 
         return jsonify({
             'success': True,
-            'call_id': call_id,
+            'call_id': call_record['id'],
             'filename': file.filename,
             'duration_seconds': duration_seconds,
             'transcription': transcription_text,
             'formatted_transcript': formatted_transcript,
             'speakers': speakers,
-            'insights': insights
+            'insights': insights,
+            'uploaded_at': call_record.get('uploaded_at')
         }), 200
     except Exception as e:
         print(f"ERROR during upload: {str(e)}")
