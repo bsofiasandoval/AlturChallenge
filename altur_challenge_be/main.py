@@ -17,6 +17,12 @@ from utils import(
 app = Flask(__name__)
 CORS(app)
 
+@app.route('/', methods=["GET"])
+def get_root():
+    return jsonify({
+            'success': True,
+        }), 200
+
 @app.route('/call/<call_id>', methods=["GET"])
 def get_call(call_id):
     """
@@ -68,7 +74,6 @@ def upload():
             file_bytes=file_bytes,
         )
 
-        # Extract data from parsed result
         transcription_text = transcription_result.get('text', '')
         formatted_transcript = transcription_result.get('formatted_transcript', [])
         speakers = transcription_result.get('speakers', [])
