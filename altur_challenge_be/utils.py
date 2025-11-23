@@ -155,3 +155,10 @@ def get_call_by_id(call_id):
     if result.data and len(result.data) > 0:
         return result.data[0]
     return None
+
+def get_all_calls():
+    """
+    Get all calls from the database, ordered by uploaded_at descending (newest first)
+    """
+    result = supabase.table('calls').select('*').order('uploaded_at', desc=True).execute()
+    return result.data if result.data else []

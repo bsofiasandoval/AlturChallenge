@@ -11,7 +11,8 @@ from utils import(
     generate_ai_insights,
     update_call_insights,
     get_audio_duration,
-    get_call_by_id
+    get_call_by_id,
+    get_all_calls
 )
 
 app = Flask(__name__)
@@ -23,6 +24,35 @@ def status():
     Root endpoint to check if the API is running.
     """
     return jsonify({"message": "Good Request."}) , 200
+
+@app.route('/calls', methods=["GET"])
+def get_calls():
+    """
+    Get all calls from the database
+    """
+    try:
+        calls = get_all_calls()
+
+        # Format response to match frontend expectations
+        formatted_calls = []
+        for call in calls:
+            formatted_calls.append({
+                'call_id': call['id'],
+                'filename': call['filename'],
+                'duration_seconds': call['duration'],
+                'transcription': call['transcription'],
+                'formatted_transcript': call.get('formatted_transcript'),
+                'speakers': call.get('speakers'),
+                'insights': call.get('insights'),
+                'uploaded_at': call.get('uploaded_at')
+            })
+
+        return jsonify({
+            'success': True,
+            'calls': formatted_calls
+        }), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to fetch calls', 'details': str(e)}), 500
 
 @app.route('/call/<call_id>', methods=["GET"])
 def get_call(call_id):
