@@ -3,6 +3,15 @@ Tests file upload validation logic
 """
 
 import unittest
+import os
+import sys
+
+# Mock environment variables before importing utils
+os.environ['SUPABASE_URL'] = 'https://test.supabase.co'
+os.environ['SUPABASE_KEY'] = 'test-key'
+os.environ['ELEVENLABS_API_KEY'] = 'test-key'
+os.environ['OPENAI_API_KEY'] = 'test-key'
+
 from utils import allowed_files
 
 class TestFileValidation(unittest.TestCase):
@@ -44,8 +53,8 @@ class TestFileValidation(unittest.TestCase):
     def test_allowed_files_empty_filename(self):
         """Test that empty filenames are rejected"""
         self.assertFalse(allowed_files(''))
-        self.assertFalse(allowed_files('.mp3'))  
-        self.assertFalse(allowed_files('.wav')) 
+        self.assertFalse(allowed_files('.mp3'))
+        self.assertFalse(allowed_files('.wav'))
 
 if __name__ == '__main__':
     unittest.main()
