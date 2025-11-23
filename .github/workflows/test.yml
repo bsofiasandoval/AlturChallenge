@@ -1,0 +1,45 @@
+name: Run Unit Test File Upload
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      working-directory: ./altur_challenge_be
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run unit tests
+      working-directory: ./altur_challenge_be
+      run: |
+        python -m pytest test_main.py -v --tb=short
+
+    - name: Generate test coverage report
+      working-directory: ./altur_challenge_be
+      run: |
+        pip install pytest-cov
+        python -m pytest test_main.py --cov=. --cov-report=term-missing
