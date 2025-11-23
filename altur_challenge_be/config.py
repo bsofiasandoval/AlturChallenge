@@ -10,4 +10,4 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 ALLOWED_EXTENSIONS = {".mp3", ".wav"}
-MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+MAX_CONTENT_LENGTH = 5 * 1024 * 1024 # Implement in future (audio file size limiting)
