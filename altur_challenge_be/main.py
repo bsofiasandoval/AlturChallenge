@@ -17,11 +17,12 @@ from utils import(
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/', methods=["GET"])
-def get_root():
-    return jsonify({
-            'success': True,
-        }), 200
+@app.route("/", methods=["GET"])
+def status():
+    """
+    Root endpoint to check if the API is running.
+    """
+    return jsonify({"message": "Good Request."}) , 200
 
 @app.route('/call/<call_id>', methods=["GET"])
 def get_call(call_id):
